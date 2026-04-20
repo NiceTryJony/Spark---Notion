@@ -23,9 +23,7 @@
         "visible": false,
         "skipTaskbar": true,
         "center": true,
-        "shadow": false,
-        "titleBarStyle": "Overlay",
-        "hiddenTitle": true
+        "shadow": false
       },
       {
         "label": "library",

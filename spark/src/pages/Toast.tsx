@@ -18,8 +18,11 @@ export default function Toast() {
       setText(preview);
 
       // Позиционируем окно в правый нижний угол
-      const screenW = window.screen.width;
-      const screenH = window.screen.height;
+      // const screenW = window.screen.width;
+      // const screenH = window.screen.height;
+       const dpr = window.devicePixelRatio || 1;
+       const screenW = window.screen.width  / dpr;
+       const screenH = window.screen.height / dpr;
       // 300 = ширина окна, 64 = высота, 20 = отступ от края
       await appWindow.setPosition(
         new LogicalPosition(screenW - 320, screenH - 96)
@@ -63,7 +66,7 @@ export default function Toast() {
           <div className="toast-title">Clipped</div>
           <div className="toast-preview">{text}</div>
         </div>
-        <div className="toast-tag">#clip</div>
+        <div className="toast-tag">#link</div>
       </div>
     </div>
   );
