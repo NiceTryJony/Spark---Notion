@@ -25,6 +25,9 @@ jobs:
             artifact: dmg
 
     runs-on: ${{ matrix.platform.os }}
+    defaults:
+      run:
+        working-directory: ./spark
 
     steps:
       - name: Checkout repository
