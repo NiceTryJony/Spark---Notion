@@ -5,7 +5,7 @@
 ### Minimal. Instant. Local-first.
 
 <p align="center">
-  <img src="./assets/128x128@2x.png" alt="Spark Banner" width="100%">
+  <img src="./assets/32x32.png" alt="Spark Banner" width="100%">
 </p>
 
 </div>
@@ -83,13 +83,13 @@ You open it — and you write.
 ## 📸 Screenshots
 
 <p align="center">
-  <img src="assets/screen-1.png" width="45%">
-  <img src="assets/screen-2.png" width="45%">
+  <img src="./assets/screen-1.png" width="45%">
+  <img src="./assets/screen-2.png" width="45%">
 </p>
 
 <p align="center">
-  <img src="assets/screen-3.png" width="45%">
-  <img src="assets/screen-4.png" width="45%">
+  <img src="./assets/screen-3.png" width="45%">
+  <img src="./assets/screen-4.png" width="45%">
 </p>
 
 ---
