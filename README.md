@@ -83,13 +83,13 @@ You open it — and you write.
 ## 📸 Screenshots
 
 <p align="center">
-  <img src="./assets/screen-1.png" width="45%">
-  <img src="./assets/screen-2.png" width="45%">
+  <img src="assets/screen-1.png" width="45%">
+  <img src="assets/screen-2.png" width="45%">
 </p>
 
 <p align="center">
-  <img src="./assets/screen-3.png" width="45%">
-  <img src="./assets/screen-4.png" width="45%">
+  <img src="assets/screen-3.png" width="45%">
+  <img src="assets/screen-4.png" width="45%">
 </p>
 
 ---
