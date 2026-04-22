@@ -108,7 +108,7 @@ npm run dev
 ## 🧪 Development
 
 ```bash
-npm run dev
+npm run tauri dev
 ```
 
 ---
@@ -116,18 +116,14 @@ npm run dev
 ## 📦 Build
 
 ```bash
-npm run build
+npm run tauri build
 ```
 
 ---
 
 ## 🧭 Roadmap
 
-* [ ] Rich text editor
-* [ ] Tags & filtering
-* [ ] Graph view
-* [ ] Plugin system
-* [ ] Optional encrypted sync
+* [ ] Making an app more quicklier for users :)
 
 ---
 
