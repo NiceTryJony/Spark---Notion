@@ -14,7 +14,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-1.2.0.3-black?style=for-the-badge">
-  <img src="https://img.shields.io/badge/tauri-2.x-blue?style=for-the-badge">
+  <img src="https://img.shields.io/badge/tauri-2-blue?style=for-the-badge">
   <img src="https://img.shields.io/badge/react-18-61DAFB?style=for-the-badge">
   <img src="https://img.shields.io/badge/sqlite-local-green?style=for-the-badge">
 </p>
