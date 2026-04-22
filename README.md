@@ -5,7 +5,7 @@
 ### Minimal. Instant. Local-first.
 
 <p align="center">
-  <img src="./assets/hero.png" alt="Spark Banner" width="100%">
+  <img src="./assets/128x128@2x.png" alt="Spark Banner" width="100%">
 </p>
 
 </div>
