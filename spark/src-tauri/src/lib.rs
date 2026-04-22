@@ -1,6 +1,7 @@
 mod commands;
 mod db;
 mod sync;
+mod tags;
 mod url_title;
 
 use std::sync::Mutex;
@@ -31,8 +32,11 @@ pub fn run() {
             let db_dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&db_dir)?;
             let db_path     = db_dir.join("spark.db");
-            let db_path_str = db_path.to_str().unwrap().to_string();
-            let database    = db::Database::new(&db_path_str).expect("Failed to open database");
+            let db_path_str = db_path.to_str()
+                .ok_or("Database path contains invalid UTF-8")?
+                .to_string();
+            let database    = db::Database::new(&db_path_str)
+                .map_err(|e| format!("Failed to open database: {}", e))?;
 
             app.manage(AppState {
                 db: Mutex::new(database),
@@ -100,8 +104,8 @@ pub fn run() {
                         };
                         (content, vec!["#link".to_string()])
                     } else {
-                        // Plain text — use normal tag extraction
-                        let tags = extract_tags_simple(&text);
+                        // Plain text — use unified tag extraction
+                        let tags = tags::extract_tags(&text);
                         (text.clone(), tags)
                     };
 
@@ -181,50 +185,4 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("Error starting Tauri");
-}
-
-// ── Tag extraction mini-helper for clipboard text ─────────────────────────────
-// We can't call the JS extractTags() from Rust, so we mirror the most important
-// keyword checks here for the plain-text paste path.
-fn extract_tags_simple(text: &str) -> Vec<String> {
-    let lower = text.to_lowercase();
-    let mut tags: Vec<&str> = vec![];
-
-    // Explicit #hashtags typed in the text
-    let explicit: Vec<String> = {
-        let mut found = vec![];
-        let mut i = 0;
-        let bytes = text.as_bytes();
-        while i < bytes.len() {
-            if bytes[i] == b'#' {
-                let start = i + 1;
-                let end = bytes[start..]
-                    .iter()
-                    .position(|&b| !b.is_ascii_alphanumeric() && b != b'_')
-                    .map(|p| start + p)
-                    .unwrap_or(bytes.len());
-                if end > start {
-                    found.push(format!("#{}", &text[start..end].to_lowercase()));
-                }
-                i = end;
-            } else {
-                i += 1;
-            }
-        }
-        found
-    };
-
-    // Simple keyword checks (subset)
-    if lower.contains("todo") || lower.contains("сделать") || lower.contains("нужно") { tags.push("#todo"); }
-    if lower.contains("http://") || lower.contains("https://") || lower.contains("www.") { tags.push("#link"); }
-    if lower.contains("купить") || lower.contains("buy") || lower.contains("заказать") { tags.push("#buy"); }
-    if lower.contains("идея") || lower.contains("idea") || lower.contains("мысль") { tags.push("#idea"); }
-    if lower.contains("работа") || lower.contains("work") || lower.contains("проект") { tags.push("#work"); }
-    if lower.contains("#clip") { tags.push("#clip"); }
-
-    let mut result: Vec<String> = tags.iter().map(|s| s.to_string()).collect();
-    result.extend(explicit);
-    result.sort();
-    result.dedup();
-    result
 }

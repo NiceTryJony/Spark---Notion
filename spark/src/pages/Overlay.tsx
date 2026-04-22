@@ -18,7 +18,6 @@ function getHashtagAtCursor(
   text: string,
   cursor: number
 ): { query: string; start: number } | null {
-  // Walk left from cursor until we hit a space/newline or start of string
   let i = cursor - 1;
   while (i >= 0 && text[i] !== " " && text[i] !== "\n") i--;
   const tokenStart = i + 1;
@@ -36,26 +35,29 @@ function getHashtagAtCursor(
 function insertTag(
   text: string,
   cursor: number,
-  tag: string,        // e.g. "#work"
+  tag: string,
   tokenStart: number
 ): { newText: string; newCursor: number } {
   const before = text.slice(0, tokenStart);
   const after  = text.slice(cursor);
-  // Add a trailing space only if the next char isn't already a space
   const space  = after.startsWith(" ") || after === "" ? "" : " ";
   const newText   = before + tag + space + after;
   const newCursor = (before + tag + space).length;
   return { newText, newCursor };
 }
 
+// ── Animation phase ────────────────────────────────────────────────────────────
+type Phase = "entering" | "idle" | "exiting";
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function Overlay() {
-  const [value, setValue]     = useState("");
-  const [saving, setSaving]   = useState(false);
-  const [flash, setFlash]     = useState(false);
+  const [value, setValue]   = useState("");
+  const [saving, setSaving] = useState(false);
+  const [flash, setFlash]   = useState(false);
+  const [phase, setPhase]   = useState<Phase>("entering");
 
-  // ── Tag dropdown state ────────────────────────────────────────────────────
+  // ── Tag dropdown state ─────────────────────────────────────────────────────
   const [dropdown, setDropdown] = useState<{
     query: string;
     tokenStart: number;
@@ -63,25 +65,62 @@ export default function Overlay() {
     activeIndex: number;
   } | null>(null);
 
-  const textareaRef  = useRef<HTMLTextAreaElement>(null);
-  const initialised  = useRef(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const initialised = useRef(false);
+  const exitTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const detectedTags = useMemo(() => extractTags(value), [value]);
   const hasText      = value.trim().length > 0;
   const saveNote     = useNotesStore((s) => s.saveNote);
 
-  // ── Focus on show ──────────────────────────────────────────────────────────
+  // ── Hide with vortex animation ─────────────────────────────────────────────
+  const hideWithAnimation = useCallback(() => {
+    if (exitTimer.current) clearTimeout(exitTimer.current);
+    setPhase("exiting");
+    exitTimer.current = setTimeout(() => {
+      setPhase("entering"); // сброс для следующего открытия
+      appWindow.hide();
+    }, 195); // совпадает с длительностью waterCardOut (0.19s)
+  }, []);
+
+  // ── Focus on show + trigger water entrance ─────────────────────────────────
   useEffect(() => {
-    let cancelled = false;
+    let cancelled  = false;
+    let phaseTimer: ReturnType<typeof setTimeout>;
+
     const focusOnly = () => {
       requestAnimationFrame(() => { if (!cancelled) textareaRef.current?.focus(); });
     };
-    if (!initialised.current) { initialised.current = true; setValue(""); setDropdown(null); }
+
+    const triggerEntrance = () => {
+      setPhase("entering");
+      phaseTimer = setTimeout(() => {
+        if (!cancelled) setPhase("idle");
+      }, 900); // кольца живут ~900ms
+    };
+
+    if (!initialised.current) {
+      initialised.current = true;
+      setValue("");
+      setDropdown(null);
+    }
+
+    triggerEntrance();
     focusOnly();
+
     const unlistenPromise = appWindow.onFocusChanged(({ payload: focused }) => {
-      if (focused) focusOnly();
+      if (focused) {
+        clearTimeout(phaseTimer);
+        triggerEntrance();
+        focusOnly();
+      }
     });
-    return () => { cancelled = true; unlistenPromise.then(fn => fn()); };
+
+    return () => {
+      cancelled = true;
+      clearTimeout(phaseTimer);
+      unlistenPromise.then(fn => fn());
+    };
   }, []);
 
   // ── Auto-resize textarea ───────────────────────────────────────────────────
@@ -95,7 +134,7 @@ export default function Overlay() {
   // ── Close dropdown helper ──────────────────────────────────────────────────
   const closeDropdown = useCallback(() => setDropdown(null), []);
 
-  // ── Apply selected tag from dropdown ─────────────────────────────────────
+  // ── Apply selected tag from dropdown ──────────────────────────────────────
   const applyTag = useCallback((tag: string, tokenStart: number) => {
     const el = textareaRef.current;
     if (!el) return;
@@ -103,7 +142,6 @@ export default function Overlay() {
     const { newText, newCursor } = insertTag(value, cursor, tag, tokenStart);
     setValue(newText);
     setDropdown(null);
-    // Restore cursor position after React re-render
     requestAnimationFrame(() => {
       if (!el) return;
       el.focus();
@@ -119,9 +157,7 @@ export default function Overlay() {
 
     const hit = getHashtagAtCursor(newValue, cursor);
     if (hit) {
-      const options = ALL_TAGS.filter(t =>
-        t.slice(1).startsWith(hit.query)   // e.g. "#work" starts with "wo"
-      );
+      const options = ALL_TAGS.filter(t => t.slice(1).startsWith(hit.query));
       if (options.length > 0) {
         setDropdown({ query: hit.query, tokenStart: hit.start, options, activeIndex: 0 });
         return;
@@ -133,19 +169,23 @@ export default function Overlay() {
   // ── Save ───────────────────────────────────────────────────────────────────
   const handleSave = useCallback(async () => {
     if (!hasText || saving) return;
-    setSaving(true); setFlash(true);
+    setSaving(true);
+    setFlash(true);
     try {
       await saveNote(value.trim(), detectedTags);
-      setValue(""); setDropdown(null);
+      setValue("");
+      setDropdown(null);
       initialised.current = false;
-      setTimeout(() => appWindow.hide(), 180);
+      setTimeout(() => hideWithAnimation(), 180);
     } catch (err) {
       console.error("save error:", err);
       setFlash(false);
+      alert(`Failed to save note: ${err}`);
     } finally {
       setSaving(false);
-      setTimeout(() => setFlash(false), 350); }
-  }, [hasText, saving, value, detectedTags, saveNote]);
+      setTimeout(() => setFlash(false), 350);
+    }
+  }, [hasText, saving, value, detectedTags, saveNote, hideWithAnimation]);
 
   // ── Keyboard ───────────────────────────────────────────────────────────────
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -178,14 +218,38 @@ export default function Overlay() {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSave(); return; }
     if (e.key === "Escape") {
       initialised.current = false;
-      appWindow.hide();
+      hideWithAnimation();
     }
-  }, [dropdown, handleSave, applyTag, closeDropdown]);
+  }, [dropdown, handleSave, applyTag, closeDropdown, hideWithAnimation]);
+
+  // ── Card className ─────────────────────────────────────────────────────────
+  const cardClass = [
+    "overlay-card",
+    phase === "entering" ? "water-in"  : "",
+    phase === "exiting"  ? "water-out" : "",
+    flash                ? "flash"     : "",
+  ].filter(Boolean).join(" ");
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="overlay-root">
-      <div className={`overlay-card${flash ? " flash" : ""}`}>
+
+      {/* Ripple rings — только при входе */}
+      {phase === "entering" && (
+        <div className="ripple-rings" aria-hidden="true">
+          <div className="ripple-ring" />
+          <div className="ripple-ring" />
+          <div className="ripple-ring" />
+          <div className="ripple-ring" />
+        </div>
+      )}
+
+      {/* Vortex overlay — только при выходе */}
+      {phase === "exiting" && (
+        <div className="vortex-overlay" aria-hidden="true" />
+      )}
+
+      <div className={cardClass}>
 
         <div className="overlay-header" data-tauri-drag-region>
           <div className="overlay-logo">
@@ -194,7 +258,7 @@ export default function Overlay() {
           </div>
           <button
             className="overlay-close"
-            onClick={() => { initialised.current = false; setDropdown(null); appWindow.hide(); }}
+            onClick={() => { initialised.current = false; setDropdown(null); hideWithAnimation(); }}
             title="Esc"
           >✕</button>
         </div>
@@ -209,7 +273,6 @@ export default function Overlay() {
             onKeyDown={handleKeyDown}
             placeholder="Write your thought..."
             rows={3}
-            // Close dropdown when user clicks away inside the textarea
             onClick={() => {
               const el = textareaRef.current;
               if (!el || !dropdown) return;
@@ -228,7 +291,6 @@ export default function Overlay() {
                     key={tag}
                     className={`tag-dropdown-item${i === dropdown.activeIndex ? " active" : ""}`}
                     style={i === dropdown.activeIndex ? { background: s.bg } : {}}
-                    // mouseDown instead of click — fires before textarea blur
                     onMouseDown={e => { e.preventDefault(); applyTag(tag, dropdown.tokenStart); }}
                   >
                     <span
@@ -241,7 +303,6 @@ export default function Overlay() {
                     >
                       {tag}
                     </span>
-                    {/* Highlight the matched prefix */}
                     {dropdown.query.length > 0 && (
                       <span className="tag-dropdown-match">
                         #{dropdown.query}
@@ -262,7 +323,7 @@ export default function Overlay() {
                 const s = getTagStyle(tag);
                 return (
                   <span key={tag} className="tag-pill"
-                    style={{ background:s.bg, color:s.text, borderColor:s.border }}>
+                    style={{ background: s.bg, color: s.text, borderColor: s.border }}>
                     {tag}
                   </span>
                 );
@@ -273,7 +334,7 @@ export default function Overlay() {
                   const s = getTagStyle(tag);
                   return (
                     <span key={tag} className="tag-pill"
-                      style={{ background:s.bg, color:s.text, borderColor:s.border }}>
+                      style={{ background: s.bg, color: s.text, borderColor: s.border }}>
                       {tag}
                     </span>
                   );
@@ -296,6 +357,7 @@ export default function Overlay() {
             </div>
           </div>
         </div>
+
       </div>
     </div>
   );

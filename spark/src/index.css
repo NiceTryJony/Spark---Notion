@@ -1187,3 +1187,56 @@ html, body, #root {
 .md-content a { color: var(--accent); text-decoration: none; }
 .md-content a:hover { text-decoration: underline; }
 .md-content br { display: block; height: 4px; content: ''; }
+
+
+
+
+
+
+
+
+
+
+
+/* ── Search highlight ─────────────────────────────────────────
+   Добавить в конец index.css
+──────────────────────────────────────────────────────────── */
+mark.search-hl {
+  background: rgba(124, 106, 247, 0.28);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+/* ── Date filter buttons ────────────────────────────────────── */
+.date-filters {
+  display: flex;
+  gap: 5px;
+  padding: 6px 12px 8px;
+  flex-wrap: wrap;
+}
+
+.date-filter-btn {
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 99px;
+  border: 1px solid var(--border-2);
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  white-space: nowrap;
+}
+
+.date-filter-btn:hover {
+  background: var(--surface-2);
+  color: var(--text-1);
+}
+
+.date-filter-btn.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}

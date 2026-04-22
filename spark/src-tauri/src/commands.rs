@@ -134,9 +134,10 @@ pub fn export_notes(since_ms: i64, app: tauri::AppHandle, state: State<'_, AppSt
 #[derive(serde::Serialize)]
 pub struct SyncServerInfo {
     pub address: String,  // "192.168.1.5:PORT"
+    pub pin: String,      // "123456" - PIN for guest authorization
 }
 
-/// Start the sync HTTP server. Returns the address to share with the guest.
+/// Start the sync HTTP server. Returns the address and PIN to share with the guest.
 #[tauri::command]
 pub async fn start_sync_server(state: tauri::State<'_, AppState>) -> Result<SyncServerInfo, String> {
     use std::sync::Arc;
@@ -162,13 +163,14 @@ pub async fn start_sync_server(state: tauri::State<'_, AppState>) -> Result<Sync
     let port = server_handle.addr.port();
     let ip   = crate::sync::local_ip();
     let addr = format!("{}:{}", ip, port);
+    let pin  = server_handle.pin.clone();  // ← NEW: Get PIN from handle
 
     {
         let mut handle = state.sync_server.lock().map_err(|e| e.to_string())?;
         *handle = Some(server_handle);
     }
 
-    Ok(SyncServerInfo { address: addr })
+    Ok(SyncServerInfo { address: addr, pin })
 }
 
 /// Stop the sync server.
@@ -181,16 +183,16 @@ pub fn stop_sync_server(state: tauri::State<'_, AppState>) -> Result<(), String>
     Ok(())
 }
 
-/// Connect to a host, exchange notes, return number of notes received.
+/// Connect to a host with PIN, exchange notes, return number of notes received.
 #[tauri::command]
-pub async fn sync_from_host(host_addr: String, state: tauri::State<'_, AppState>) -> Result<usize, String> {
+pub async fn sync_from_host(host_addr: String, pin: String, state: tauri::State<'_, AppState>) -> Result<usize, String> {
     use std::sync::Arc;
 
     let db_path = state.db_path.clone();
     let db = crate::db::Database::new(&db_path).map_err(|e| e.to_string())?;
     let db_arc = Arc::new(std::sync::Mutex::new(db));
 
-    let result = crate::sync::sync_as_guest(&host_addr, db_arc)
+    let result = crate::sync::sync_as_guest(&host_addr, &pin, db_arc)
         .await
         .map_err(|e| e.to_string())?;
 

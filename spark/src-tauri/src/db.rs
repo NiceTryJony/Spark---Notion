@@ -134,7 +134,11 @@ impl Database {
     }
 
     pub fn delete_note(&self, id: i64) -> Result<()> {
-        self.conn.execute("UPDATE notes SET deleted = 1 WHERE id = ?1", params![id])?;
+        let now = Utc::now().timestamp_millis();
+        self.conn.execute(
+            "UPDATE notes SET deleted = 1, updated_at = ?1 WHERE id = ?2",
+            params![now, id],
+        )?;
         Ok(())
     }
 
@@ -292,19 +296,35 @@ impl Database {
                 .ok();
 
             match existing {
-                Some(local_ts) if local_ts >= note.updated_at => { /* local wins */ }
+                // local новее или равен — local wins, skip
+                Some(local_ts) if local_ts > note.updated_at => {}
+
+                // равные timestamps — не-удалённая побеждает удалённую
+                Some(local_ts) if local_ts == note.updated_at => {
+                    if !note.deleted {
+                        tx.execute(
+                            "UPDATE notes SET content=?1, tags=?2, updated_at=?3,
+                                    deleted=0, pinned=?4, checked=?5 WHERE id=?6",
+                            params![note.content, tags_j, note.updated_at, pin, checked_j, note.id],
+                        )?;
+                    }
+                }
+
+                // remote новее — обновляем local
                 Some(_) => {
                     tx.execute(
                         "UPDATE notes SET content=?1, tags=?2, updated_at=?3,
-                                 deleted=?4, pinned=?5, checked=?6 WHERE id=?7",
+                                deleted=?4, pinned=?5, checked=?6 WHERE id=?7",
                         params![note.content, tags_j, note.updated_at, del, pin, checked_j, note.id],
                     )?;
                 }
+
+                // нет локально — вставляем
                 None => {
                     tx.execute(
                         "INSERT INTO notes(id,content,tags,created_at,updated_at,
-                                           deleted,pinned,sort_order,checked)
-                         VALUES(?1,?2,?3,?4,?5,?6,?7,?4,?8)",
+                                        deleted,pinned,sort_order,checked)
+                        VALUES(?1,?2,?3,?4,?5,?6,?7,?4,?8)",
                         params![note.id, note.content, tags_j, note.created_at,
                                 note.updated_at, del, pin, checked_j],
                     )?;
@@ -367,8 +387,19 @@ fn refit_checked(content: &str, current: &[bool]) -> Vec<bool> {
 }
 
 fn sanitize_fts(input: &str) -> String {
+    // Keep Unicode alphanumeric (кириллица, emoji), whitespace, and common punctuation
+    // Remove only FTS5 special operators: " * ( ) AND OR NOT
     input.chars()
-        .filter(|c| c.is_alphanumeric() || c.is_whitespace())
+        .filter(|c| {
+            // Allow all alphabetic chars (включая кириллицу)
+            c.is_alphabetic() ||
+            // Allow all numeric chars
+            c.is_numeric() ||
+            // Allow whitespace
+            c.is_whitespace() ||
+            // Allow common punctuation except FTS5 operators
+            matches!(c, '-' | '_' | '#' | '@' | '.' | ',' | '!' | '?' | ':' | ';')
+        })
         .collect::<String>()
         .split_whitespace()
         .collect::<Vec<_>>()

@@ -21,6 +21,7 @@ tauri-plugin-autostart = "2.5.1"
 tauri-plugin-clipboard-manager = "2.3.2"
 
 # sync.rs
+rand = "0.8"
 axum = "0.7"
 tokio = { version = "1", features = ["full"] }
 reqwest = { version = "0.12", features = ["json"] }

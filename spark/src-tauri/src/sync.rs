@@ -1,22 +1,22 @@
-/// Local network sync — super alpha.
+/// Local network sync — PIN-protected.
 ///
 /// Architecture:
 ///   HOST  → starts an axum HTTP server on a random free port
-///           → UI shows "192.168.x.x:PORT" to share
-///   GUEST → enters the address, POSTs its own notes, receives host notes
+///           → generates a random 6-digit PIN
+///           → UI shows "192.168.x.x:PORT PIN: 123456" to share
+///   GUEST → enters the address + PIN, POSTs its own notes, receives host notes
 ///           → both sides merge (last updated_at wins per-id)
 ///
-/// Security: zero — LAN only, no auth, treat it like a USB cable.
+/// Security: Simple PIN protection for LAN access. Still LAN-only, no encryption.
 
 use axum::{
     extract::State as AxumState,
-    http::StatusCode,
+    http::{StatusCode},
     routing::{get, post},
     Json, Router,
 };
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::HashMap,
     net::SocketAddr,
     sync::{Arc, Mutex},
 };
@@ -41,6 +41,8 @@ pub struct SyncNote {
 #[derive(Serialize, Deserialize)]
 pub struct SyncPayload {
     pub notes: Vec<SyncNote>,
+    #[serde(default)]
+    pub pin: String,  // ← NEW: PIN for authorization
 }
 
 #[derive(Serialize)]
@@ -53,12 +55,14 @@ pub struct SyncResult {
 
 struct ServerState {
     db: Arc<Mutex<Database>>,
+    pin: String,  // ← NEW: Host's PIN
 }
 
 // ── Running server handle (stored in AppState) ────────────────────────────────
 
 pub struct SyncServerHandle {
     pub addr: SocketAddr,
+    pub pin: String,  // ← NEW: PIN to share with guest
     shutdown_tx: oneshot::Sender<()>,
 }
 
@@ -68,11 +72,19 @@ impl SyncServerHandle {
     }
 }
 
+/// Generate a random 6-digit PIN
+fn generate_pin() -> String {
+    use rand::Rng;
+    let pin: u32 = rand::thread_rng().gen_range(100_000..=999_999);
+    pin.to_string()
+}
+
 // ── Start server ──────────────────────────────────────────────────────────────
 
-/// Binds on `0.0.0.0:0` (OS picks a free port), returns the handle.
+/// Binds on `0.0.0.0:0` (OS picks a free port), returns the handle with PIN.
 pub async fn start_server(db: Arc<Mutex<Database>>) -> Result<SyncServerHandle, String> {
-    let state = Arc::new(ServerState { db });
+    let pin = generate_pin();
+    let state = Arc::new(ServerState { db, pin: pin.clone() });
 
     let app = Router::new()
         .route("/notes", get(handle_get_notes))
@@ -97,6 +109,7 @@ pub async fn start_server(db: Arc<Mutex<Database>>) -> Result<SyncServerHandle, 
 
     Ok(SyncServerHandle {
         addr,
+        pin,  // ← NEW: PIN to share
         shutdown_tx: tx,
     })
 }
@@ -110,16 +123,22 @@ async fn handle_get_notes(
     let notes = db
         .get_all_for_sync()
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    Ok(Json(SyncPayload { notes }))
+    Ok(Json(SyncPayload { notes, pin: String::new() }))
 }
 
 // ── POST /sync ────────────────────────────────────────────────────────────────
-/// Guest posts its notes → host merges them, returns its own notes.
+/// Guest posts its notes + PIN → host validates PIN, merges notes, returns its own notes.
 
 async fn handle_post_sync(
     AxumState(state): AxumState<Arc<ServerState>>,
     Json(payload): Json<SyncPayload>,
 ) -> Result<Json<SyncPayload>, StatusCode> {
+    // ── Validate PIN ──────────────────────────────────────────────────────────
+    if payload.pin != state.pin {
+        eprintln!("[sync] Invalid PIN: got '{}', expected '{}'", payload.pin, state.pin);
+        return Err(StatusCode::UNAUTHORIZED);
+    }
+
     let db = state.db.lock().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     db.merge_sync_notes(&payload.notes)
@@ -129,14 +148,18 @@ async fn handle_post_sync(
         .get_all_for_sync()
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    Ok(Json(SyncPayload { notes: all }))
+    Ok(Json(SyncPayload { 
+        notes: all,
+        pin: String::new(),  // Don't echo PIN back
+    }))
 }
 
 // ── Client-side sync ──────────────────────────────────────────────────────────
 
-/// Connect to a host, exchange notes, return count of merged notes.
+/// Connect to a host, exchange notes with PIN, return count of merged notes.
 pub async fn sync_as_guest(
     host_addr: &str,
+    pin: &str,
     db: Arc<Mutex<Database>>,
 ) -> Result<SyncResult, String> {
     let client = reqwest::Client::builder()
@@ -156,18 +179,19 @@ pub async fn sync_as_guest(
         format!("http://{}", host_addr)
     };
 
-    // POST our notes → receive host notes
+    // POST our notes + PIN → receive host notes
     let response = client
         .post(format!("{}/sync", base_url))
         .json(&SyncPayload {
             notes: local_notes.clone(),
+            pin: pin.to_string(),  // ← NEW: Send PIN
         })
         .send()
         .await
         .map_err(|e| format!("Connection failed: {}", e))?;
 
     if !response.status().is_success() {
-        return Err(format!("Host returned error: {}", response.status()));
+        return Err(format!("Host returned error: {} (wrong PIN?)", response.status()));
     }
 
     let host_payload: SyncPayload = response
