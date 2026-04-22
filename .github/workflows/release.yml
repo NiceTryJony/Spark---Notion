@@ -68,7 +68,7 @@ jobs:
         with:
           name: spark-${{ matrix.platform.os }}-${{ matrix.platform.target }}
           path: |
-            src-tauri/target/${{ matrix.platform.target }}/release/bundle/**/*
+            spark/src-tauri/target/${{ matrix.platform.target }}/release/bundle/**/*
           retention-days: 7
 
   release:
