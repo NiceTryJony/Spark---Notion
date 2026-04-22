@@ -79,32 +79,7 @@
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
       "timestampUrl": "",
-      "tsp": false,
-      "wix": {
-        "language": "en-US",
-        "template": null,
-        "fragmentPaths": [],
-        "componentRefs": [],
-        "featureGroupRefs": [],
-        "featureRefs": [],
-        "mergeRefs": [],
-        "skipWebviewInstall": false,
-        "enableElevatedUpdateTask": true,
-        "bannerPath": null,
-        "dialogImagePath": null
-      },
-      "nsis": {
-        "headerImage": null,
-        "sidebarImage": null,
-        "installerIcon": null,
-        "installMode": "perUser",
-        "languages": ["English"],
-        "displayLanguageSelector": false,
-        "compressionLevel": "high",
-        "customLanguageFiles": {},
-        "template": null,
-        "startMenuFolder": "Spark"
-      }
+      "tsp": false
     },
     
     "macOS": {
