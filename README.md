@@ -1,157 +1,175 @@
-# Spark - Notes
+<div align="center">
 
-**Product Overview · April 2026**  
-v1.0.0.0 · Tauri 2 · Rust · React · SQLite  
-Local-first · Offline · Windows / Linux / macOS
+# ⚡ Spark — Notion Reimagined
 
----
+### Minimal. Instant. Local-first.
 
-## ⚡ Что такое Spark
+<p align="center">
+  <img src="./assets/hero.png" alt="Spark Banner" width="100%">
+</p>
 
-Spark - это **десктопный инструмент быстрого захвата мыслей**.
-
-Одна горячая клавиша → одно поле → Enter → готово.
-
-Без вкладок. Без аккаунтов. Без задержек.
-
-> “Не приложение для заметок - инструмент захвата. Разница как между записной книжкой и листком на столе.”
+</div>
 
 ---
 
-## 🚀 Как это работает
-
-1. Нажать `Ctrl + Shift + Space`
-2. Появляется overlay поверх всего
-3. Вводишь мысль (авто-теги работают сами)
-4. Нажимаешь Enter - окно исчезает
-5. Возвращаешься к работе
-
-⏱ Весь цикл: ~3-6 секунд
+<p align="center">
+  <img src="https://img.shields.io/badge/version-1.0.0-black?style=for-the-badge">
+  <img src="https://img.shields.io/badge/tauri-2.x-blue?style=for-the-badge">
+  <img src="https://img.shields.io/badge/react-18-61DAFB?style=for-the-badge">
+  <img src="https://img.shields.io/badge/sqlite-local-green?style=for-the-badge">
+</p>
 
 ---
 
-## 🧠 Функциональность
+## ✨ Overview
 
-### ⚡ Quick Overlay
-- Мгновенное окно поверх всех приложений
-- Авто-фокус
-- Закрытие без лишних действий
+**Spark** is a modern note-taking application inspired by Notion — but rebuilt from scratch with a different philosophy:
 
-### 🏷 Теги + организация
-- Авто-детект: `#idea #todo #work #clip #link`
-- Цветовая система
-- Sidebar навигация
+* ⚡ Instant performance
+* 🔒 Local-first data ownership
+* 📴 Fully offline
+* 🧠 Minimal cognitive load
 
-### 🔍 Full-text search (FTS5)
-- SQLite FTS5 поиск
-- Работает оффлайн
-- Мгновенные результаты
-
-### 📌 Закрепление
-- Pin важных заметок
-- Drag & drop сортировка
-
-### 📋 Clipboard capture
-- `Ctrl + Shift + V` → сохраняет буфер
-- Автоматический тег `#clip`
-
-### ☑ Todo mode
-- `#todo` превращается в чекбокс
-- Состояние сохраняется
+> No cloud. No waiting. Just thinking.
 
 ---
 
-## 🔥 Плюсы
+## 🎯 Philosophy
 
-- ⚡ Захват мысли за 3-6 секунд
-- 📴 100% локально (без облака)
-- 🧠 Не ломает контекст работы
-- 💾 SQLite - легко бэкапить
-- 🔎 Полный оффлайн поиск
-- 🪶 ~10 MB размер
-- 🌍 Windows / Linux / macOS
+Spark is built on a simple principle:
 
----
+> Your tools should never slow down your thoughts.
 
-## ⚠ Минусы
+Unlike traditional note apps:
 
-- 📵 Нет мобильной версии
-- 👥 Нет командной работы
-- 📎 Нет файлов / вложений
-- 🧩 Только plain text
-- ⏰ Нет напоминаний
-- ☁ Нет синхронизации
-- 🧱 Нет иерархии заметок
+* No loading screens
+* No forced sync
+* No internet dependency
+
+You open it — and you write.
 
 ---
 
-## 👤 Для кого
+## 🚀 Features
 
-### Подходит:
-- Разработчики
-- Люди с потоком мыслей
-- Минималисты
-- Исследователи / студенты
-- Пользователи, уставшие от Notion
-
-### Не подходит:
-- Команды
-- Mobile-first пользователи
-- Любители сложных систем (PKM, базы знаний)
-- Люди, которым нужны напоминания
+* ⚡ Instant note creation
+* 📴 Offline-first architecture
+* 🧩 Clean & minimal UI
+* 🗂 Structured content (Notion-like)
+* 💾 SQLite-based storage
+* 🖥 Native desktop performance (Tauri)
 
 ---
 
-## ⚔ Сравнение
+## 🏗 Tech Stack
 
-| Продукт     | Скорость | Локальный | Лёгкий | Оффлайн |
-|-------------|----------|-----------|--------|---------|
-| **Spark**   | ⚡⚡⚡     | ✅        | ⚡     | ✅      |
-| Notion      | ❌       | ❌        | ❌     | ❌      |
-| Obsidian    | ⚡       | ✅        | ⚠      | ✅      |
-| Apple Notes | ⚠       | ⚠        | ⚡     | ⚠      |
+| Layer    | Technology     |
+| -------- | -------------- |
+| Frontend | React          |
+| Backend  | Rust (Tauri)   |
+| Database | SQLite         |
+| UI       | Custom Minimal |
 
 ---
 
-## 🧱 Технологии
+## 🎬 Demo (GIF)
 
-- Tauri 2
-- Rust (backend)
-- React 18 + TypeScript
-- Vite 5
-- Zustand
-- SQLite + FTS5
-- CSS (design tokens)
-- Geist / Geist Mono
+<p align="center">
+  <img src="./assets/demo.gif" alt="App Demo" width="800">
+</p>
+
+---
+
+## 📸 Screenshots
+
+<p align="center">
+  <img src="./assets/screen-1.png" width="45%">
+  <img src="./assets/screen-2.png" width="45%">
+</p>
+
+<p align="center">
+  <img src="./assets/screen-3.png" width="45%">
+  <img src="./assets/screen-4.png" width="45%">
+</p>
+
+---
+
+## ⚙️ Installation
+
+```bash
+git clone https://github.com/NiceTryJony/Spark---Notion.git
+cd Spark---Notion
+npm install
+npm run dev
+```
+
+---
+
+## 🧪 Development
+
+```bash
+npm run dev
+```
+
+---
+
+## 📦 Build
+
+```bash
+npm run build
+```
 
 ---
 
 ## 🧭 Roadmap
 
-### ✅ Done
-- Overlay capture system
-- Library (timeline + tags + search)
-- Clipboard capture
-- Todo mode
-- Auto startup
-
-### 🟡 Planned
-- Weekly export (Markdown)
-- Templates system
-- Note aging effect
-
-### 🔵 Ideas
-- Local AI tagging (Ollama)
-- Smart recap system
+* [ ] Rich text editor
+* [ ] Tags & filtering
+* [ ] Graph view
+* [ ] Plugin system
+* [ ] Optional encrypted sync
 
 ---
 
-## 📦 Philosophy
+## 🧠 Why Spark?
 
-Spark — это не "Боже ещё один Notion...".
+Most modern note apps are:
 
-Это инструмент, который **не мешает думать**.
+* Bloated
+* Slow
+* Cloud-dependent
 
-Он не хранит твою жизнь.
+Spark goes the opposite direction:
 
-Он ловит мысли и отпускает тебя дальше.
+> Local-first is not a feature — it’s the foundation.
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome.
+
+* Open an issue
+* Submit a pull request
+* Suggest ideas
+
+---
+
+## 📄 License
+
+MIT
+
+---
+
+## ⚡ Final Thought
+
+> Tools should disappear.
+> Only your thoughts should remain.
+
+---
+
+<div align="center">
+
+Built with focus.
+
+</div>
